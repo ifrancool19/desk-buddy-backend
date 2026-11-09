@@ -40,7 +40,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         # FIX: Swapped to the active production real-time voice streaming identifier
-        async with client.aio.live.connect(model="gemini-2.5-flash", config=config) as session:
+        async with client.aio.live.connect(model="gemini-2.0-flash-exp", config=config) as session:
             print("🚀 Secure voice session with Google AI created!")
             await websocket.send_text("SYSTEM: Connected to Google Gemini Live API.")
             
