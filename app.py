@@ -33,11 +33,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
     # Standardized live streaming parameters
     config = types.LiveConnectConfig(
-        response_modalities=[types.LiveModality.AUDIO],
-        system_instruction=types.Content(
-            parts=[types.Part.from_text(text="You are a smart desktop voice friend. Give very short, human-like voice responses.")]
-        )
+    response_modalities=["AUDIO"],  #  Pass a list containing a plain string instead
+    system_instruction=types.Content(
+        parts=[types.Part.from_text(text="You are a smart desktop voice friend. Give very short, human-like voice responses.")]
     )
+)
 
     try:
         # 🔗 FIX: Swapped to the globally verified real-time audio connection endpoint
