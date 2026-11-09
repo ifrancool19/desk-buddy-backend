@@ -16,8 +16,10 @@ async def root():
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     print("🎯 Local client connection handshake complete!")
+    
+    # Send an immediate text frame to satisfy Render's router path and stabilize the line
+    await websocket.send_text("SYSTEM: Connection stabilized on Render proxy.")
 
-    # FIX: Changed types.LiveModality.AUDIO to the string literal "AUDIO"
     config = types.LiveConnectConfig(
         response_modalities=["AUDIO"],
         system_instruction=types.Content(
@@ -29,13 +31,13 @@ async def websocket_endpoint(websocket: WebSocket):
         # Establish persistent background channel to Google Gemini
         async with client.aio.live.connect(model="gemini-2.5-flash", config=config) as session:
             print("🚀 Secure voice session with Google AI created!")
+            await websocket.send_text("SYSTEM: Connected to Google Gemini Live API.")
             
             async def receive_from_client():
                 try:
                     while True:
                         data = await websocket.receive_bytes()
                         if data and len(data) > 0:
-                            # Forward uncompressed chunk streams up to Google AI
                             await session.send(
                                 input={"data": data, "mime_type": "audio/pcm;rate=16000"},
                                 end_of_turn=False
@@ -52,7 +54,6 @@ async def websocket_endpoint(websocket: WebSocket):
                         if server_content and server_content.model_turn:
                             for part in server_content.model_turn.parts:
                                 if part.inline_data:
-                                    # Pump synthesis data arrays down to local audio cards
                                     await websocket.send_bytes(part.inline_data.data)
                 except Exception as e:
                     print(f"Output channel handling exception: {e}")
@@ -62,6 +63,10 @@ async def websocket_endpoint(websocket: WebSocket):
             
     except Exception as e:
         print(f"⚠️ Live session dropped: {e}")
+        try:
+            await websocket.send_text(f"SYSTEM_ERROR: Session dropped: {str(e)}")
+        except:
+            pass
     finally:
         try:
             await websocket.close()
