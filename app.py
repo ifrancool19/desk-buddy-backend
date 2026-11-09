@@ -1,10 +1,21 @@
 import os
 import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware  # <-- ADD THIS IMPORT
 from google import genai
 from google.genai import types
 
 app = FastAPI()
+
+# 🛠️ ADD THIS BLOCK TO ALLOW CROSS-ORIGIN WEBSOCKETS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -29,7 +40,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         # FIX: Swapped to the active production real-time voice streaming identifier
-        async with client.aio.live.connect(model="gemini-3.8-live", config=config) as session:
+        async with client.aio.live.connect(model="gemini-2.5-flash", config=config) as session:
             print("🚀 Secure voice session with Google AI created!")
             await websocket.send_text("SYSTEM: Connected to Google Gemini Live API.")
             
