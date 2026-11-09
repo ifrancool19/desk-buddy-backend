@@ -17,9 +17,9 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     print("🎯 Local client connection handshake complete!")
 
-    # Live voice parameter configurations
+    # FIX: Changed types.LiveModality.AUDIO to the string literal "AUDIO"
     config = types.LiveConnectConfig(
-        response_modalities=[types.LiveModality.AUDIO],
+        response_modalities=["AUDIO"],
         system_instruction=types.Content(
             parts=[types.Part.from_text(text="You are a smart desktop voice friend. Give very short, human-like voice responses.")]
         )
@@ -68,4 +68,3 @@ async def websocket_endpoint(websocket: WebSocket):
         except:
             pass
         print("🔌 Pipeline disconnected.")
-
