@@ -7,7 +7,7 @@ from google.genai import types
 
 app = FastAPI()
 
-# 1. Enable CORS middleware to ensure local loop handshakes aren't blocked administratively
+# Enable CORS middleware to ensure local loop handshakes aren't blocked
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,6 +17,7 @@ app.add_middleware(
 )
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+# Initialize the client clearly using the environment key
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 @app.get("/")
@@ -28,19 +29,19 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     print("🎯 Local client connection handshake complete!")
     
-    # Send an immediate text frame to satisfy Render's router path and stabilize the line
+    # Send an immediate text frame to stabilize Render's proxy line
     await websocket.send_text("SYSTEM: Connection stabilized on Render proxy.")
 
-    # 2. FIX: Passed "AUDIO" as a plain string inside a list to eliminate the LiveModality AttributeError
-    config = types.LiveConnectConfig(
-        response_modalities=["AUDIO"],
-        system_instruction=types.Content(
-            parts=[types.Part.from_text(text="You are a smart desktop voice friend. Give very short, human-like voice responses.")]
-        )
-    )
+    # Configure the live connection parameters exactly as expected by the API
+    config = {
+        "response_modalities": ["AUDIO"],
+        "system_instruction": {
+            "parts": [{"text": "You are a smart desktop voice friend. Give very short, human-like voice responses."}]
+        }
+    }
 
     try:
-        # 3. FIX: Swapped out "gemini-3.8-live" for the universally supported live streaming model identifier
+        # Connect directly to the production Multimodal Live API endpoint
         async with client.aio.live.connect(model="gemini-2.0-flash-exp", config=config) as session:
             print("🚀 Secure voice session with Google AI created!")
             await websocket.send_text("SYSTEM: Connected to Google Gemini Live API.")
@@ -70,12 +71,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 except Exception as e:
                     print(f"Output channel handling exception: {e}")
 
-            # Run both background streams concurrently without blocking the port
+            # Run both streaming loops simultaneously
             await asyncio.gather(receive_from_client(), send_to_client())
             
     except Exception as e:
         print(f"⚠️ Live session dropped: {e}")
         try:
+            # Send the exact internal message to help debug if it fails
             await websocket.send_text(f"SYSTEM_ERROR: Session dropped: {str(e)}")
         except:
             pass
