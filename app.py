@@ -7,7 +7,7 @@ from google.genai import types
 
 app = FastAPI()
 
-# Bypasses the 403 cross-origin check for local laptop simulators
+# 1. Enable CORS middleware to ensure local loop handshakes aren't blocked administratively
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,19 +28,19 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     print("🎯 Local client connection handshake complete!")
     
-    # Keeps Render proxy happy during the external Google API handshake setup
+    # Send an immediate text frame to satisfy Render's router path and stabilize the line
     await websocket.send_text("SYSTEM: Connection stabilized on Render proxy.")
 
-    # Standardized live streaming parameters
+    # 2. FIX: Passed "AUDIO" as a plain string inside a list to eliminate the LiveModality AttributeError
     config = types.LiveConnectConfig(
-    response_modalities=["AUDIO"],  #  Pass a list containing a plain string instead
-    system_instruction=types.Content(
-        parts=[types.Part.from_text(text="You are a smart desktop voice friend. Give very short, human-like voice responses.")]
+        response_modalities=["AUDIO"],
+        system_instruction=types.Content(
+            parts=[types.Part.from_text(text="You are a smart desktop voice friend. Give very short, human-like voice responses.")]
+        )
     )
-)
 
     try:
-        # 🔗 FIX: Swapped to the globally verified real-time audio connection endpoint
+        # 3. FIX: Swapped out "gemini-3.8-live" for the universally supported live streaming model identifier
         async with client.aio.live.connect(model="gemini-2.0-flash-exp", config=config) as session:
             print("🚀 Secure voice session with Google AI created!")
             await websocket.send_text("SYSTEM: Connected to Google Gemini Live API.")
@@ -70,7 +70,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 except Exception as e:
                     print(f"Output channel handling exception: {e}")
 
-            # Run loops simultaneously without locking up the ASGI workers
+            # Run both background streams concurrently without blocking the port
             await asyncio.gather(receive_from_client(), send_to_client())
             
     except Exception as e:
