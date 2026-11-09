@@ -28,8 +28,8 @@ async def websocket_endpoint(websocket: WebSocket):
     )
 
     try:
-        # FIX: Changed model to gemini-2.0-flash-exp to avoid the 404 WebSocket rejection error
-        async with client.aio.live.connect(model="gemini-2.0-flash-exp", config=config) as session:
+        # FIX: Swapped to the active production real-time voice streaming identifier
+        async with client.aio.live.connect(model="gemini-3.8-live", config=config) as session:
             print("🚀 Secure voice session with Google AI created!")
             await websocket.send_text("SYSTEM: Connected to Google Gemini Live API.")
             
@@ -73,4 +73,3 @@ async def websocket_endpoint(websocket: WebSocket):
         except:
             pass
         print("🔌 Pipeline disconnected.")
-
