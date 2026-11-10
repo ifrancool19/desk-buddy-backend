@@ -34,12 +34,12 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
         return
 
-    # FIX: Built dynamically with pure variables to completely stop any internal text processing glitches
+    # FIX: Built dynamically with completely clean domain handles and no leading slashes
     protocol = "wss"
-    host_address = "://googleapis.com"
-    endpoint_route = "/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
+    domain_host = "generativelanguage.googleapis.com"
+    api_route = "ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
     
-    gemini_url = f"{protocol}://{host_address}{endpoint_route}?key={GEMINI_API_KEY}"
+    gemini_url = f"{protocol}://{domain_host}/{api_route}?key={GEMINI_API_KEY}"
 
     try:
         print("🔗 Connecting directly to Google Gemini Live WebSocket node...")
@@ -118,3 +118,4 @@ async def websocket_endpoint(websocket: WebSocket):
         except:
             pass
         print("🔌 Pipeline disconnected.")
+
