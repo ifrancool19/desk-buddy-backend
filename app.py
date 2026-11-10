@@ -20,7 +20,7 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 @app.get("/")
 async def root():
-    return {"status": "Direct WebSocket proxy engine is live and port-aligned"}
+    return {"status": "Direct Paced WebSocket proxy engine is live"}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -34,7 +34,6 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
         return
 
-    # Direct production URL string for the Multimodal Live API
     gemini_url = f"wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key={GEMINI_API_KEY}"
 
     try:
@@ -43,6 +42,7 @@ async def websocket_endpoint(websocket: WebSocket):
             print("🚀 Secure voice session with Google AI created successfully!")
             await websocket.send_text("SYSTEM: Connected to Google Gemini Live API.")
 
+            # Formulate setup payload with default voice profile parameters
             setup_config = {
                 "setup": {
                     "model": "models/gemini-2.5-flash",
@@ -50,9 +50,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "responseModalities": ["AUDIO"],
                         "speechConfig": {
                             "voiceConfig": {
-                                "prebuiltVoiceConfig": {
-                                    "voiceName": "Puck"
-                                }
+                                "prebuiltVoiceConfig": {}
                             }
                         }
                     },
@@ -63,6 +61,9 @@ async def websocket_endpoint(websocket: WebSocket):
             }
             await gemini_ws.send(json.dumps(setup_config))
             print("📝 Session configurations sent to Gemini.")
+            
+            # FIX: Allow a short duration buffer for Google to spin up the container environment
+            await asyncio.sleep(0.5)
 
             async def receive_from_client():
                 try:
