@@ -33,9 +33,8 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
         return
 
-    # Direct production routing string for the Multimodal Live API
-    # Bypasses internal SDK path formatting entirely
-    gemini_url = f"wss://://googleapis.com{GEMINI_API_KEY}"
+    # FIX: Corrected the malformed URI structure and utilized the official endpoint path host
+    gemini_url = f"wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key={GEMINI_API_KEY}"
 
     try:
         print("🔗 Connecting directly to Google Gemini Live WebSocket node...")
@@ -43,16 +42,16 @@ async def websocket_endpoint(websocket: WebSocket):
             print("🚀 Secure voice session with Google AI created successfully!")
             await websocket.send_text("SYSTEM: Connected to Google Gemini Live API.")
 
-            # Send the initial session configuration frame as a JSON text string
+            # Send the initial session configuration frame using the GA model string name
             setup_config = {
                 "setup": {
-                    "model": "models/gemini-2.0-flash-exp",
+                    "model": "models/gemini-3.8-live",
                     "generationConfig": {
                         "responseModalities": ["AUDIO"],
                         "speechConfig": {
                             "voiceConfig": {
                                 "prebuiltVoiceConfig": {
-                                    "voiceName": "Puck" # Friendly desk buddy voice
+                                    "voiceName": "Puck"
                                 }
                             }
                         }
@@ -71,7 +70,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     while True:
                         data = await websocket.receive_bytes()
                         if data and len(data) > 0:
-                            # Format binary PCM bytes into the exact JSON envelope Gemini expects
                             import base64
                             audio_b64 = base64.b64encode(data).decode("utf-8")
                             realtime_input = {
@@ -96,7 +94,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     async for message in gemini_ws:
                         response_data = json.loads(message)
                         
-                        # Parse out the binary audio stream data segments
                         if "serverContent" in response_data:
                             model_turn = response_data["serverContent"].get("modelTurn", {})
                             for part in model_turn.get("parts", []):
