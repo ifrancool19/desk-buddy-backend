@@ -34,9 +34,8 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
         return
 
-    # FIX: Built dynamically with completely clean domain handles and no leading slashes
     protocol = "wss"
-    domain_host = "generativelanguage.googleapis.com"
+    domain_host = "://googleapis.com"
     api_route = "ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
     
     gemini_url = f"{protocol}://{domain_host}/{api_route}?key={GEMINI_API_KEY}"
@@ -47,9 +46,10 @@ async def websocket_endpoint(websocket: WebSocket):
             print("🚀 Secure voice session with Google AI created successfully!")
             await websocket.send_text("SYSTEM: Connected to Google Gemini Live API.")
 
+            # FIX: Swapped retired gemini-2.0-flash-exp with active production gemini-2.5-flash
             setup_config = {
                 "setup": {
-                    "model": "models/gemini-2.0-flash-exp",
+                    "model": "models/gemini-2.5-flash",
                     "generationConfig": {
                         "responseModalities": ["AUDIO"],
                         "speechConfig": {
@@ -118,4 +118,3 @@ async def websocket_endpoint(websocket: WebSocket):
         except:
             pass
         print("🔌 Pipeline disconnected.")
-
