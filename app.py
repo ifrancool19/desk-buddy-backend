@@ -35,7 +35,7 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
         return
 
-    gemini_url = f"wss://://googleapis.com{GEMINI_API_KEY}"
+    gemini_url = f"wss://googleapis.com{GEMINI_API_KEY}"
 
     try:
         print("🔗 Connecting directly to Google Gemini Live WebSocket node...")
