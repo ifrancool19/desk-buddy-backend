@@ -3,11 +3,9 @@ import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
-from google.genai import types
 
 app = FastAPI()
 
-# Enable CORS middleware to ensure local loop handshakes aren't blocked
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,7 +15,6 @@ app.add_middleware(
 )
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-# Initialize the client clearly using the environment key
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 @app.get("/")
@@ -29,10 +26,10 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     print("🎯 Local client connection handshake complete!")
     
-    # Send an immediate text frame to stabilize Render's proxy line
+    # Satisfy Render's proxy router path to keep connection open
     await websocket.send_text("SYSTEM: Connection stabilized on Render proxy.")
 
-    # Configure the live connection parameters exactly as expected by the API
+    # Dictionary format compatible with the latest google-genai Live client configurations
     config = {
         "response_modalities": ["AUDIO"],
         "system_instruction": {
@@ -41,8 +38,8 @@ async def websocket_endpoint(websocket: WebSocket):
     }
 
     try:
-        # Connect directly to the production Multimodal Live API endpoint
-        async with client.aio.live.connect(model="gemini-2.0-flash-exp", config=config) as session:
+        # FIXED: Swapped out gemini-2.0-flash-exp for the production endpoint: gemini-3.8-live
+        async with client.aio.live.connect(model="gemini-3.8-live", config=config) as session:
             print("🚀 Secure voice session with Google AI created!")
             await websocket.send_text("SYSTEM: Connected to Google Gemini Live API.")
             
@@ -71,13 +68,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 except Exception as e:
                     print(f"Output channel handling exception: {e}")
 
-            # Run both streaming loops simultaneously
             await asyncio.gather(receive_from_client(), send_to_client())
             
     except Exception as e:
         print(f"⚠️ Live session dropped: {e}")
         try:
-            # Send the exact internal message to help debug if it fails
             await websocket.send_text(f"SYSTEM_ERROR: Session dropped: {str(e)}")
         except:
             pass
