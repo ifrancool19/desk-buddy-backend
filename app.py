@@ -34,11 +34,8 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
         return
 
-    protocol = "wss"
-    domain_host = "://googleapis.com"
-    api_route = "ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
-    
-    gemini_url = f"{protocol}://{domain_host}/{api_route}?key={GEMINI_API_KEY}"
+    # Direct production URL string for the Multimodal Live API
+    gemini_url = f"wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key={GEMINI_API_KEY}"
 
     try:
         print("🔗 Connecting directly to Google Gemini Live WebSocket node...")
@@ -46,7 +43,6 @@ async def websocket_endpoint(websocket: WebSocket):
             print("🚀 Secure voice session with Google AI created successfully!")
             await websocket.send_text("SYSTEM: Connected to Google Gemini Live API.")
 
-            # FIX: Swapped retired gemini-2.0-flash-exp with active production gemini-2.5-flash
             setup_config = {
                 "setup": {
                     "model": "models/gemini-2.5-flash",
