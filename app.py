@@ -3,6 +3,8 @@ import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
+from google.genai import types
+from google.genai.errors import APIError  # Diagnostic import
 
 app = FastAPI()
 
@@ -19,26 +21,22 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 
 @app.get("/")
 async def root():
-    return {"status": "Always-on audio queue engine is live"}
+    return {"status": "Diagnostic audio engine is live"}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     print("🎯 Local client connection handshake complete!")
-    
-    # Satisfy Render's proxy router path to keep connection open
     await websocket.send_text("SYSTEM: Connection stabilized on Render proxy.")
 
-    # Dictionary format compatible with the latest google-genai Live client configurations
-    config = {
-        "response_modalities": ["AUDIO"],
-        "system_instruction": {
-            "parts": [{"text": "You are a smart desktop voice friend. Give very short, human-like voice responses."}]
-        }
-    }
+    config = types.LiveConnectConfig(
+        response_modalities=["AUDIO"],
+        system_instruction=types.Content(
+            parts=[types.Part.from_text(text="You are a smart desktop voice friend. Give very short, human-like voice responses.")]
+        )
+    )
 
     try:
-        # FIXED: Swapped out gemini-2.0-flash-exp for the production endpoint: gemini-3.8-live
         async with client.aio.live.connect(model="gemini-3.8-live", config=config) as session:
             print("🚀 Secure voice session with Google AI created!")
             await websocket.send_text("SYSTEM: Connected to Google Gemini Live API.")
@@ -70,10 +68,20 @@ async def websocket_endpoint(websocket: WebSocket):
 
             await asyncio.gather(receive_from_client(), send_to_client())
             
-    except Exception as e:
-        print(f"⚠️ Live session dropped: {e}")
+    except APIError as age:
+        # DIAGNOSTIC LOG 1: Captures full detailed responses from Google's endpoint node
+        error_detail = f"CRITICAL GOOGLE API ERROR: Status Code {age.code} | Message: {age.message}"
+        print(f"❌ {error_detail}")
         try:
-            await websocket.send_text(f"SYSTEM_ERROR: Session dropped: {str(e)}")
+            await websocket.send_text(f"SYSTEM_ERROR: {error_detail}")
+        except:
+            pass
+    except Exception as e:
+        # DIAGNOSTIC LOG 2: Standard fallback catcher
+        error_detail = f"Standard Session Exception: {str(e)}"
+        print(f"⚠️ {error_detail}")
+        try:
+            await websocket.send_text(f"SYSTEM_ERROR: {error_detail}")
         except:
             pass
     finally:
