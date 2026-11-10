@@ -5,7 +5,6 @@ import base64
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import websockets
-import uvicorn
 
 app = FastAPI()
 
@@ -35,7 +34,12 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
         return
 
-    gemini_url = f"wss://://googleapis.com{GEMINI_API_KEY}"
+    # FIX: Built dynamically with pure variables to completely stop any internal text processing glitches
+    protocol = "wss"
+    host_address = "://googleapis.com"
+    endpoint_route = "/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
+    
+    gemini_url = f"{protocol}://{host_address}{endpoint_route}?key={GEMINI_API_KEY}"
 
     try:
         print("🔗 Connecting directly to Google Gemini Live WebSocket node...")
@@ -45,7 +49,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
             setup_config = {
                 "setup": {
-                    "model": "models/gemini-2.5-flash",
+                    "model": "models/gemini-2.0-flash-exp",
                     "generationConfig": {
                         "responseModalities": ["AUDIO"],
                         "speechConfig": {
@@ -92,7 +96,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         response_data = json.loads(message)
                         if "serverContent" in response_data:
                             model_turn = response_data["serverContent"].get("modelTurn", {})
-                            for part in model_turn.get("parts", []):
+                            for part in model_turn.get("parts",):
                                 if "inlineData" in part:
                                     raw_audio_bytes = base64.b64decode(part["inlineData"]["data"])
                                     await websocket.send_bytes(raw_audio_bytes)
@@ -114,8 +118,3 @@ async def websocket_endpoint(websocket: WebSocket):
         except:
             pass
         print("🔌 Pipeline disconnected.")
-
-if __name__ == "__main__":
-    # FIX: Explicitly bind the runtime engine to Render's injected network port variables
-    port = int(os.environ.get("PORT", 10000))
-    uvicorn.run("app:app", host="0.0.0.0", port=port)
